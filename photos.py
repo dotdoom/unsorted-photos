@@ -9,6 +9,7 @@ import os
 import sys
 import urllib
 
+from collections import defaultdict
 from requests_oauthlib import OAuth2Session
 
 def parse_args():
@@ -178,7 +179,7 @@ for album in albums:
   itemIdsInAlbum = {item['id'] for item in photos.mediaItems(album['id'])}
   itemIdsInAllAlbums |= itemIdsInAlbum
 
-  print('%40s %s [%4d/%4d] %s' % (
+  print('%-40s %s [%4d/%4d] %s' % (
     album.get('title', '*** NO TITLE ***'),
     '*' if 'shareInfo' in album else ' ',
     len(itemIdsInAlbum.intersection(libraryItemIds)),
@@ -191,13 +192,16 @@ for album in albums:
         '           match the number of items reported by server (%r)' % (
           len(itemIdsInAlbum), album.get('mediaItemsCount')))
 
-
-itemIdsNotInAlbum = libraryItemIds - itemIdsInAllAlbums
-print('%d items are not in any album' % len(itemIdsNotInAlbum))
-# TODO(dotdoom): print date, and sort by date.
-for itemId in itemIdsNotInAlbum:
-  item = libraryItems[itemId]
-  print('%20s %s' % (
+itemsNotInAnyAlbum = sorted(
+    [libraryItems[itemId] for itemId in libraryItemIds - itemIdsInAllAlbums],
+    key=lambda item: item.get('mediaMetadata', {}).get('creationTime', ''))
+print('%d items are not in any album, sorted by creation time (ascending)' %
+    len(itemsNotInAnyAlbum))
+for item in itemsNotInAnyAlbum:
+  metadata = item.get('mediaMetadata', defaultdict(str))
+  print('%-32s %-15s %-11s %s' % (
+    metadata['creationTime'],
     item['mimeType'],
+    'x'.join((metadata['width'], metadata['height'])),
     item['productUrl'],
   ))
