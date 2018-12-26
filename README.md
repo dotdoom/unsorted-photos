@@ -34,8 +34,8 @@ $ ./photos.py -h
 
 or
 
-```shell
-> photos.py
+```
+> photos.py -h
 ```
 
 ## Performance
