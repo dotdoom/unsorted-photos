@@ -17,11 +17,6 @@ def parse_args():
       description='Find Google Photos pictures which are not added to any '
       'album yet, and print out their URLs')
   parser.add_argument(
-      '--include-archived',
-      help='include archived photos',
-      action='store_true',
-  )
-  parser.add_argument(
       '--oauth2-secret',
       help='file name containing OAuth2 client_id, downloaded from GCP console',
   )
