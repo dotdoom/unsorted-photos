@@ -8,6 +8,7 @@ import json
 import os
 import sys
 import urllib
+import webbrowser
 
 from collections import defaultdict
 from requests_oauthlib import OAuth2Session
@@ -20,10 +21,21 @@ def parse_args():
       '--oauth2-secret',
       help='file name containing OAuth2 client_id, downloaded from GCP console',
   )
+  parser.add_argument(
+      '--open-in-browser',
+      help='number of non-album photos that should be opened in a browser, or '
+      'all if this flag is specified without a value. WARNING: depending on '
+      'your photo organizing strategy, there can be a lot of unsorted photos, '
+      'which can easily freeze your operating system',
+      # Optional value, 0 if unspecified, -1 if specified without value.
+      nargs='?', default=0, const=-1,
+  )
   return parser.parse_args()
+
 
 class PhotosError(Exception):
   pass
+
 
 class Photos(object):
 
@@ -192,6 +204,8 @@ itemsNotInAnyAlbum = sorted(
     key=lambda item: item.get('mediaMetadata', {}).get('creationTime', ''))
 print('%d items are not in any album, sorted by creation time (ascending)' %
     len(itemsNotInAnyAlbum))
+
+opened_in_browser = 0
 for item in itemsNotInAnyAlbum:
   metadata = item.get('mediaMetadata', defaultdict(str))
   print('%-32s %-15s %-11s %s' % (
@@ -200,3 +214,6 @@ for item in itemsNotInAnyAlbum:
     'x'.join((metadata['width'], metadata['height'])),
     item['productUrl'],
   ))
+  if args.open_in_browser < 0 or opened_in_browser < args.open_in_browser:
+    webbrowser.open(item['productUrl'], autoraise=False)
+    opened_in_browser += 1
