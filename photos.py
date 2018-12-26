@@ -160,20 +160,22 @@ libraryItems = {
     for item in photos.mediaItems()
 }
 libraryItemIds = set(libraryItems.keys())
-print(' ', len(libraryItems))
+print('  Total: %d' % len(libraryItems))
 
 print('Collecting albums...')
 albums = list(photos.albums())
-print('  Shared albums... ')
+print('  Shared albums...')
 albums += list(photos.sharedAlbums())
-print(' ', len(albums))
+print('  Total: %d' % len(albums))
 
 itemIdsInAllAlbums = set()
-
 print('Finding items not belonging to any album.')
 for album in albums:
   itemIdsInAlbum = {item['id'] for item in photos.mediaItems(album['id'])}
   itemIdsInAllAlbums |= itemIdsInAlbum
+
+  # Interesting fact: album.mediaItemsCount would not always match
+  # len(itemIdsInAlbum), but the latter usually matches Photos UI.
 
   print('%-40s %s [%4d/%4d] %s' % (
     album.get('title', '*** NO TITLE ***'),
@@ -182,11 +184,6 @@ for album in albums:
     len(itemIdsInAlbum),
     album['productUrl'],
   ))
-  if int(album.get('mediaItemsCount', 0)) != len(itemIdsInAlbum):
-    print(
-        '  WARNING: Number of items we got from this album (%d) does not\n'
-        '           match the number of items reported by server (%r)' % (
-          len(itemIdsInAlbum), album.get('mediaItemsCount')))
 
 itemsNotInAnyAlbum = sorted(
     [libraryItems[itemId] for itemId in libraryItemIds - itemIdsInAllAlbums],
