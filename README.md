@@ -25,3 +25,15 @@ $ pip install -r requirements.txt
 
 1. [Quota for Photos API](https://console.cloud.google.com/apis/api/photoslibrary.googleapis.com/quotas)
    is 10,000 calls per day at the moment of writing this.
+
+## Usage
+
+```shell
+$ ./photos.py -h
+```
+
+or
+
+```shell
+> photos.py
+```
