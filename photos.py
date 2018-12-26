@@ -6,7 +6,6 @@ import argparse
 import glob
 import json
 import os
-import sys
 import urllib
 import webbrowser
 
@@ -123,11 +122,6 @@ class Photos(object):
       yield item
 
 
-def fail(message):
-  print(message, file=sys.stderr)
-  os.exit(1)
-
-
 args = parse_args()
 
 oauth2_secret_file = args.oauth2_secret
@@ -135,8 +129,6 @@ if oauth2_secret_file is None:
   for oauth2_secret_file in glob.glob('*.json'):
     print('No OAuth2 secret file specified, using', oauth2_secret_file)
     break
-if oauth2_secret_file is None:
-  fail('OAuth2 secret file not found')
 
 with open(oauth2_secret_file, 'r') as f:
   oauth2_secret = json.load(f)
@@ -162,22 +154,19 @@ except:
 
 photos = Photos(google)
 
-sys.stdout.write('Collecting all pictures... ')
-sys.stdout.flush()
+print('Collecting all pictures...')
 libraryItems = {
     item['id']: item
     for item in photos.mediaItems()
 }
 libraryItemIds = set(libraryItems.keys())
-sys.stdout.write('%d\n' % len(libraryItems))
+print(' ', len(libraryItems))
 
-sys.stdout.write('Collecting albums... ')
-sys.stdout.flush()
+print('Collecting albums...')
 albums = list(photos.albums())
-sys.stdout.write('Shared albums... ')
-sys.stdout.flush()
+print('  Shared albums... ')
 albums += list(photos.sharedAlbums())
-sys.stdout.write('%d\n' % len(albums))
+print(' ', len(albums))
 
 itemIdsInAllAlbums = set()
 
