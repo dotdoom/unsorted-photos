@@ -44,4 +44,4 @@ The script is completely stateless and does not store neither credentials nor
 any lists of pictures. Therefore it has to request credentials at every run.
 
 A typical run on an average computer with ~10k pictures and ~200 albums, with a
-very fast Internet connection takes up to 20 min.
+very fast Internet connection takes up to 8 min.
