@@ -21,13 +21,13 @@ def parse_args():
       help='file name containing OAuth2 client_id, downloaded from GCP console',
   )
   parser.add_argument(
-      '--open-in-browser',
-      help='number of non-album photos that should be opened in a browser, or '
-      'all if this flag is specified without a value. WARNING: depending on '
-      'your photo organizing strategy, there can be a lot of unsorted photos, '
-      'which can easily freeze your operating system',
-      # Optional value, 0 if unspecified, -1 if specified without value.
-      nargs='?', default=0, const=-1,
+      '--browser-batch',
+      help='number of non-album photos that should be opened in a browser at a '
+      'time. Before opening each "batch" of unsorted photo URLs in the '
+      'browser, the script will ask for confirmation. Set to 0 to disable '
+      'browser prompts and just print photo URLs',
+      type=int,
+      default=25,
   )
   return parser.parse_args()
 
@@ -98,7 +98,11 @@ class Photos(object):
   def mediaItems(self, albumId=None):
     url = self.BASE_URL + '/mediaItems'
     method = 'GET'
-    params = {}
+    params = {
+        # Setting higher values may help avoiding API calls quota too fast.
+        # 100 is the maximum allowed by mediaItems API, according to doc.
+        'pageSize': 100,
+    }
 
     if albumId is not None:
       url += ':search'
@@ -112,12 +116,18 @@ class Photos(object):
       yield item
 
   def albums(self):
-    for item in self._iterate(self.BASE_URL + '/albums', params={},
+    params = {
+        'pageSize': 50,
+    }
+    for item in self._iterate(self.BASE_URL + '/albums', params=params,
         listKey='albums'):
       yield item
 
   def sharedAlbums(self):
-    for item in self._iterate(self.BASE_URL + '/sharedAlbums', params={},
+    params = {
+        'pageSize': 50,
+    }
+    for item in self._iterate(self.BASE_URL + '/sharedAlbums', params=params,
         listKey='sharedAlbums'):
       yield item
 
@@ -191,7 +201,29 @@ itemsNotInAnyAlbum = sorted(
 print('%d items are not in any album, sorted by creation time (ascending)' %
     len(itemsNotInAnyAlbum))
 
-opened_in_browser = 0
+class BrowserBatch(object):
+
+  PROMPT = 'Would you like to open these %d items in browser [Y/n]? '
+
+  def __init__(self, batch_size):
+    self._batch_size = batch_size
+    self._batch = []
+    super(BrowserBatch, self).__init__()
+
+  def add(self, url):
+    if self._batch_size > 0:
+      self._batch.append(url)
+      if len(self._batch) == self._batch_size:
+        self.open()
+
+  def open(self):
+    if self._batch:
+      if raw_input(self.PROMPT % len(self._batch)).lower() != 'n':
+        for url in self._batch:
+          webbrowser.open(url)
+    self._batch = []
+
+browser_batch = BrowserBatch(args.browser_batch)
 for item in itemsNotInAnyAlbum:
   metadata = item.get('mediaMetadata', defaultdict(str))
   print('%-32s %-15s %-11s %s' % (
@@ -200,6 +232,6 @@ for item in itemsNotInAnyAlbum:
     'x'.join((metadata['width'], metadata['height'])),
     item['productUrl'],
   ))
-  if args.open_in_browser < 0 or opened_in_browser < args.open_in_browser:
-    webbrowser.open(item['productUrl'], autoraise=False)
-    opened_in_browser += 1
+  browser_batch.add(item['productUrl'])
+
+browser_batch.open()
